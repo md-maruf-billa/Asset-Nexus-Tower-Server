@@ -28,39 +28,67 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // DATABASE COLLECTION
-        const allUserCollection = client.db("ANT").collection("All-users")
+        const allUserCollection = client.db("ANT").collection("All-users");
+
+
+
+        // MIDDLEWARE HARE
+
+        // VERIFY VALID USER
+        const verifyUser = (req, res, next) => {
+            const token = req?.headers?.access_token;
+            jwt.verify(token, process.env.USER_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'unauthorized access' })
+                }
+                req.decoded = decoded;
+                next();
+            }
+            )
+        }
+
+
+        // VERIFY ADMIN
+        const verifyAdmin = (req, res, next) => {
+
+        }
 
         // SAVE USER INFORMATION
-        app.post("/user-info", async(req,res)=>{
+        app.post("/user-info", async (req, res) => {
             const allInfo = req.body;
             const result = await allUserCollection.insertOne(allInfo);
             res.send(result);
         })
         // SEND USER DATA 
-        app.get("/user-info/:email", async (req,res)=>{
-            const query = {email : req.params?.email};
+        app.get("/user-info/:email", async (req, res) => {
+            const query = { email: req.params?.email };
             const result = await allUserCollection.findOne(query);
             res.send(result);
         })
 
         // SEND USER SECRET 
-        app.post("/verify-user",async(req,res)=>{
+        app.post("/verify-user", async (req, res) => {
             const email = req.body;
-            const token = jwt.sign(email, process.env.USER_SECRET,{expiresIn:"2h"});
-            res.send({token:token});
+            const token = jwt.sign(email, process.env.USER_SECRET, { expiresIn: "2h" });
+            res.send({ token: token });
         })
-
+        // VERIFY ADMIN ROLE
+        app.get("/verify-role", verifyUser, async (req, res) => {
+            const query = {email: req.decoded?.email};
+            const result = await allUserCollection.findOne(query);
+            res.send(result);
+        })
         //-----TEST API
-        app.get("/",(req,res)=>{
+        app.get("/", (req, res) => {
             res.send("Server is running on the way.......")
         })
     } finally {
-        
+
     }
 }
 run().catch(console.dir);
 
-app.listen(port,()=>{
+app.listen(port, () => {
     console.log("server is running......")
 })
 
