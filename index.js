@@ -29,7 +29,7 @@ async function run() {
     try {
         // DATABASE COLLECTION
         const allUserCollection = client.db("ANT").collection("All-users");
-
+        const allAssetsCollection = client.db("ANT").collection("all-assets");
 
 
         // MIDDLEWARE HARE
@@ -52,6 +52,26 @@ async function run() {
         const verifyAdmin = (req, res, next) => {
 
         }
+
+
+
+
+        // ----------------ASSETS RELATED--------------------
+
+
+        app.post("/add-asset", async(req,res)=>{
+            const assetInfo = req.body;
+            const result = await allAssetsCollection.insertOne(assetInfo);
+            res.send(result)
+
+        })
+
+
+
+
+
+
+        //-----------------USER RELATED---------------------
 
         // SAVE USER INFORMATION
         app.post("/user-info", async (req, res) => {
