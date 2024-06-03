@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
 const app = express();
 import 'dotenv/config';
 import jwt from 'jsonwebtoken';
@@ -81,6 +81,13 @@ async function run() {
             res.send(result);
         })
 
+        // DELETE A ASSET
+        app.delete("/delete-asset/:id",verifyUser,verifyAdmin,async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id : new ObjectId(id)}
+            const result = await allAssetsCollection.deleteOne(query);
+            res.send(result)
+        })
 
 
 
