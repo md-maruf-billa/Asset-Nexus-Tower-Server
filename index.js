@@ -49,8 +49,17 @@ async function run() {
 
 
         // VERIFY ADMIN
-        const verifyAdmin = (req, res, next) => {
-
+        const verifyAdmin = async (req, res, next) => {
+            const email = { email: req?.decoded?.email };
+            const result = await allUserCollection.findOne(email);
+            if (result.userType == "HR Manager") {
+                next();
+            }
+            else {
+                res
+                    .status(403)
+                    .send("Unauthorize access")
+            }
         }
 
 
@@ -59,11 +68,17 @@ async function run() {
         // ----------------ASSETS RELATED--------------------
 
 
-        app.post("/add-asset", async(req,res)=>{
+        app.post("/add-asset",verifyUser,verifyAdmin, async (req, res) => {
             const assetInfo = req.body;
             const result = await allAssetsCollection.insertOne(assetInfo);
             res.send(result)
 
+        })
+
+        // GET ALL ASSETS
+        app.get("/all-asset", verifyUser,verifyAdmin, async(req,res)=>{
+            const result = await allAssetsCollection.find().toArray();
+            res.send(result);
         })
 
 
@@ -93,8 +108,8 @@ async function run() {
             res.send({ token: token });
         })
         // VERIFY ADMIN ROLE
-        app.get("/verify-role", verifyUser, async (req, res) => {
-            const query = {email: req.decoded?.email};
+        app.get("/verify-role", verifyUser, verifyAdmin, async (req, res) => {
+            const query = { email: req.decoded?.email };
             const result = await allUserCollection.findOne(query);
             res.send(result);
         })
