@@ -76,8 +76,10 @@ async function run() {
         })
 
         // GET ALL ASSETS
-        app.get("/all-asset", verifyUser,verifyAdmin, async(req,res)=>{
-            const result = await allAssetsCollection.find().toArray();
+        app.get("/all-asset/:email", verifyUser,verifyAdmin, async(req,res)=>{
+            const email = req.params.email;
+            const query = {hrEmail : email}
+            const result = await allAssetsCollection.find(query).toArray();
             res.send(result);
         })
 
@@ -115,6 +117,17 @@ async function run() {
             const result = await allAssetsCollection.updateOne(query,updatedDoc);
             res.send(result)
 
+        })
+
+
+        // GET ALL COMPANY
+        app.get("/all-company", async(req,res)=>{
+            const result = await allUserCollection.aggregate([
+                {
+                    $match:{userType: "HR Manager"}
+                }
+            ]).toArray();
+            res.send(result);
         })
 
 
