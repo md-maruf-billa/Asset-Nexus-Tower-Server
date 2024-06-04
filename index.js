@@ -89,7 +89,15 @@ async function run() {
             res.send(result)
         })
 
+        // GET SINGLE ASSET BY ID
+        app.get("/single-asset/:id",verifyUser,verifyAdmin, async(req,res)=>{
+            const id = req.params.id;
+            const result = await allAssetsCollection.findOne({_id: new ObjectId(id)});
+            res.send(result);
 
+        })
+
+        
 
 
 
