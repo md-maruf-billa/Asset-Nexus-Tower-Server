@@ -97,7 +97,25 @@ async function run() {
 
         })
 
-        
+        // UPDATE ASSET INFORMATION
+        app.patch("/update-asset/:id",verifyUser,verifyAdmin,async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const updatedData = req.body;
+            // updated document
+            const updatedDoc = {
+                $set:{
+                    productName:updatedData.productName,
+                    productType: updatedData.productType,
+                    productQuantity:updatedData.productQuantity,
+                    assetImage:updatedData.assetImage
+                }
+            }
+            
+            const result = await allAssetsCollection.updateOne(query,updatedDoc);
+            res.send(result)
+
+        })
 
 
 
