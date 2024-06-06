@@ -4,6 +4,8 @@ import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
 const app = express();
 import 'dotenv/config';
 import jwt from 'jsonwebtoken';
+import stripe from 'stripe';
+const stripeKey = stripe(process.env.STRIPE_KEY)
 
 const port = process.env.PORT || 7000;
 const uri = `mongodb+srv://${process.env.DATABASE_USERNAMe}:${process.env.DATABASE_PASSWORD}@cluster0.fp7vkua.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -154,11 +156,22 @@ async function run() {
             res.send({ token: token });
         })
         // VERIFY ADMIN ROLE
-        app.get("/verify-role", verifyUser, verifyAdmin, async (req, res) => {
+        app.get("/verify-role", verifyUser, async (req, res) => {
             const query = { email: req.decoded?.email };
             const result = await allUserCollection.findOne(query);
             res.send(result);
         })
+
+        // -----CHECK PAYMENT INTENT-----
+        app.post("/payment-intent",verifyUser, async(req,res)=>{
+            const price = parseInt(req.body?.price)*100;
+            const paymentIntent = await stripeKey.paymentIntents.create({
+                amount:price,
+                currency:"usd"
+            })
+            res.send(paymentIntent)
+        })
+
         //-----TEST API
         app.get("/", (req, res) => {
             res.send("Server is running on the way.......")
