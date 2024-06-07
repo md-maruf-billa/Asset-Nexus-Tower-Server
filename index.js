@@ -161,6 +161,21 @@ async function run() {
             const result = await allUserCollection.findOne(query);
             res.send(result);
         })
+        // ADD SUBSCRIPTION ON A USER PROFILE
+        app.patch("/add-subscription/:email", async(req,res)=>{
+            const userEmail = req.params.email;
+            const query = {email:userEmail};
+            const subscriptionInfo = req.body;
+            const options = {upsert : true};
+            const updatedDoc ={
+                $set:{
+                    packageInfo :subscriptionInfo
+                }
+            }
+
+            const result = await allUserCollection.updateOne(query,updatedDoc,options);
+            res.send(result)
+        })
 
         // -----CHECK PAYMENT INTENT-----
         app.post("/payment-intent",verifyUser, async(req,res)=>{
