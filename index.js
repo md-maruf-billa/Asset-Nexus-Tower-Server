@@ -32,7 +32,7 @@ async function run() {
         // DATABASE COLLECTION
         const allUserCollection = client.db("ANT").collection("All-users");
         const allAssetsCollection = client.db("ANT").collection("all-assets");
-        const allEmployeeCollection =  client.db("ANT").collection("all-Employee");
+        const allEmployeeCollection = client.db("ANT").collection("all-Employee");
 
 
         // MIDDLEWARE HARE
@@ -71,7 +71,7 @@ async function run() {
         // ----------------ASSETS RELATED--------------------
 
 
-        app.post("/add-asset",verifyUser,verifyAdmin, async (req, res) => {
+        app.post("/add-asset", verifyUser, verifyAdmin, async (req, res) => {
             const assetInfo = req.body;
             const result = await allAssetsCollection.insertOne(assetInfo);
             res.send(result)
@@ -79,55 +79,55 @@ async function run() {
         })
 
         // GET ALL ASSETS
-        app.get("/all-asset/:email", verifyUser,verifyAdmin, async(req,res)=>{
+        app.get("/all-asset/:email", verifyUser, verifyAdmin, async (req, res) => {
             const email = req.params.email;
-            const query = {hrEmail : email}
+            const query = { hrEmail: email }
             const result = await allAssetsCollection.find(query).toArray();
             res.send(result);
         })
 
         // DELETE A ASSET
-        app.delete("/delete-asset/:id",verifyUser,verifyAdmin,async(req,res)=>{
+        app.delete("/delete-asset/:id", verifyUser, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = {_id : new ObjectId(id)}
+            const query = { _id: new ObjectId(id) }
             const result = await allAssetsCollection.deleteOne(query);
             res.send(result)
         })
 
         // GET SINGLE ASSET BY ID
-        app.get("/single-asset/:id",verifyUser,verifyAdmin, async(req,res)=>{
+        app.get("/single-asset/:id", verifyUser, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const result = await allAssetsCollection.findOne({_id: new ObjectId(id)});
+            const result = await allAssetsCollection.findOne({ _id: new ObjectId(id) });
             res.send(result);
 
         })
 
         // UPDATE ASSET INFORMATION
-        app.patch("/update-asset/:id",verifyUser,verifyAdmin,async(req,res)=>{
+        app.patch("/update-asset/:id", verifyUser, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const updatedData = req.body;
             // updated document
             const updatedDoc = {
-                $set:{
-                    productName:updatedData.productName,
+                $set: {
+                    productName: updatedData.productName,
                     productType: updatedData.productType,
-                    productQuantity:updatedData.productQuantity,
-                    assetImage:updatedData.assetImage
+                    productQuantity: updatedData.productQuantity,
+                    assetImage: updatedData.assetImage
                 }
             }
-            
-            const result = await allAssetsCollection.updateOne(query,updatedDoc);
+
+            const result = await allAssetsCollection.updateOne(query, updatedDoc);
             res.send(result)
 
         })
 
 
         // GET ALL COMPANY
-        app.get("/all-company", async(req,res)=>{
+        app.get("/all-company", async (req, res) => {
             const result = await allUserCollection.aggregate([
                 {
-                    $match:{userType: "HR Manager"}
+                    $match: { userType: "HR Manager" }
                 }
             ]).toArray();
             res.send(result);
@@ -144,29 +144,56 @@ async function run() {
             res.send(result);
         })
         // SEND USER DATA 
-        app.get("/user-info/:email",verifyUser, async (req, res) => {
+        app.get("/user-info/:email", verifyUser, async (req, res) => {
             const query = { email: req.params?.email };
             const result = await allUserCollection.findOne(query);
             res.send(result);
         })
         // GET USER DATA BY ID
-        app.get("/billing-user/:id", verifyUser,async(req,res)=>{
-            const id  = req.params.id;
-            const query = {_id: new ObjectId(id)};
+        app.get("/billing-user/:id", verifyUser, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
             const result = await allUserCollection.findOne(query);
             res.send(result)
         })
 
         // VERIFY EMPLOYEE
-        app.get("/employee-info/:email", verifyUser,async(req,res)=>{
+        app.get("/employee-info/:email", verifyUser, async (req, res) => {
             const email = req.params.email;
-            const query = {employeeEmail: email};
+            const query = { employeeEmail: email };
             const result = await allEmployeeCollection.findOne(query);
             res.send(result);
         })
-
+        // GET EMPLOYEE REQUEST
+        app.get("/employee-request/:email", verifyUser, verifyAdmin, async (req, res) => {
+            const email = req.params.email;
+            const query = { hrEmail: email };
+            // const result = await allEmployeeCollection.find(query).toArray();
+            const result = await allEmployeeCollection.aggregate([
+                {
+                    $match: {
+                        hrEmail:email,
+                        status:"Requested"
+                    }
+                }
+            ]).toArray();
+            res.send(result)
+        })
+        // UPDATE EMPLOYEE STATUS
+        app.patch("/update-employee-status/:id", verifyUser, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const updateInfo = req.body;
+            const updatedDoc = {
+                $set: {
+                    status: updateInfo.status
+                }
+            }
+            const result = await allEmployeeCollection.updateOne(query, updatedDoc);
+            res.send(result)
+        })
         // SET A EMPLOYEE DATA UNDER A HR MANAGER
-        app.post("/register-team",verifyUser, async(req,res)=>{
+        app.post("/register-team", verifyUser, async (req, res) => {
             const allData = req.body;
             const result = await allEmployeeCollection.insertOne(allData);
             res.send(result)
@@ -185,27 +212,27 @@ async function run() {
             res.send(result);
         })
         // ADD SUBSCRIPTION ON A USER PROFILE
-        app.patch("/add-subscription/:email", async(req,res)=>{
+        app.patch("/add-subscription/:email", async (req, res) => {
             const userEmail = req.params.email;
-            const query = {email:userEmail};
+            const query = { email: userEmail };
             const subscriptionInfo = req.body;
-            const options = {upsert : true};
-            const updatedDoc ={
-                $set:{
-                    packageInfo :subscriptionInfo
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    packageInfo: subscriptionInfo
                 }
             }
 
-            const result = await allUserCollection.updateOne(query,updatedDoc,options);
+            const result = await allUserCollection.updateOne(query, updatedDoc, options);
             res.send(result)
         })
 
         // -----CHECK PAYMENT INTENT-----
-        app.post("/payment-intent",verifyUser, async(req,res)=>{
-            const price = parseInt(req.body?.price)*100;
+        app.post("/payment-intent", verifyUser, async (req, res) => {
+            const price = parseInt(req.body?.price) * 100;
             const paymentIntent = await stripeKey.paymentIntents.create({
-                amount:price,
-                currency:"usd"
+                amount: price,
+                currency: "usd"
             })
             res.send(paymentIntent)
         })
