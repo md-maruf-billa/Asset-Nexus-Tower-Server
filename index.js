@@ -79,10 +79,25 @@ async function run() {
         })
 
         // GET ALL ASSETS
-        app.get("/all-asset/:email", verifyUser, verifyAdmin, async (req, res) => {
+        app.get("/all-asset/:email", verifyUser, async (req, res) => {
+            const stock = req.query;
             const email = req.params.email;
             const query = { hrEmail: email }
             const result = await allAssetsCollection.find(query).toArray();
+            if(stock.stock== ""){
+                res.send(result);
+                return;
+            }
+            else if (stock.stock == "Out of Stock") {
+                const outOfStock = result.filter(data=> data.productQuantity == 0);
+                res.send(outOfStock);
+                return;
+            }
+            else if (stock.stock == "In Stock") {
+                const inStock = result.filter(data=> data.productQuantity > 0);
+                res.send(inStock);
+                return;
+            }
             res.send(result);
         })
 
@@ -168,12 +183,11 @@ async function run() {
         app.get("/employee-request/:email", verifyUser, verifyAdmin, async (req, res) => {
             const email = req.params.email;
             const query = { hrEmail: email };
-            // const result = await allEmployeeCollection.find(query).toArray();
             const result = await allEmployeeCollection.aggregate([
                 {
                     $match: {
-                        hrEmail:email,
-                        status:"Requested"
+                        hrEmail: email,
+                        status: "Requested"
                     }
                 }
             ]).toArray();
