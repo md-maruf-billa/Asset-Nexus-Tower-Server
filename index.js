@@ -32,6 +32,7 @@ async function run() {
         // DATABASE COLLECTION
         const allUserCollection = client.db("ANT").collection("All-users");
         const allAssetsCollection = client.db("ANT").collection("all-assets");
+        const allEmployeeCollection =  client.db("ANT").collection("all-Employee");
 
 
         // MIDDLEWARE HARE
@@ -143,10 +144,32 @@ async function run() {
             res.send(result);
         })
         // SEND USER DATA 
-        app.get("/user-info/:email", async (req, res) => {
+        app.get("/user-info/:email",verifyUser, async (req, res) => {
             const query = { email: req.params?.email };
             const result = await allUserCollection.findOne(query);
             res.send(result);
+        })
+        // GET USER DATA BY ID
+        app.get("/billing-user/:id", verifyUser,async(req,res)=>{
+            const id  = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const result = await allUserCollection.findOne(query);
+            res.send(result)
+        })
+
+        // VERIFY EMPLOYEE
+        app.get("/employee-info/:email", verifyUser,async(req,res)=>{
+            const email = req.params.email;
+            const query = {employeeEmail: email};
+            const result = await allEmployeeCollection.findOne(query);
+            res.send(result);
+        })
+
+        // SET A EMPLOYEE DATA UNDER A HR MANAGER
+        app.post("/register-team",verifyUser, async(req,res)=>{
+            const allData = req.body;
+            const result = await allEmployeeCollection.insertOne(allData);
+            res.send(result)
         })
 
         // SEND USER SECRET 
