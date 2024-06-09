@@ -158,6 +158,13 @@ async function run() {
             res.send(result);
         })
 
+        // GET EMPLOYEE ASSET REQUEST DATA
+        app.get("/employee-asset-request/:email",verifyUser,async(req,res)=>{
+            const query = {employeeEmail : req.params.email};
+            const result = await allAssetsRequestCollection.find(query).toArray();
+            res.send(result)
+        })
+
 
         // GET ALL EMPLOYEE BY CURRENT HR EMAIL
         app.get("/current-hr-employee/:email", verifyUser, verifyAdmin, async (req, res) => {
@@ -166,7 +173,12 @@ async function run() {
             const result = await allEmployeeCollection.find(query).toArray();
             res.send(result)
         })
-
+        // DELETE A EMPLOYEE BY HR MANAGER
+        app.delete("/current-hr-employee/:email",verifyUser,verifyAdmin,async(req,res)=>{
+            const query = {employeeEmail : req.params.email};
+            const result = await allEmployeeCollection.deleteOne(query);
+            res.send(result)
+        })
 
         //-----------------USER RELATED---------------------
 
