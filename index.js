@@ -33,6 +33,7 @@ async function run() {
         const allUserCollection = client.db("ANT").collection("All-users");
         const allAssetsCollection = client.db("ANT").collection("all-assets");
         const allEmployeeCollection = client.db("ANT").collection("all-Employee");
+        const allAssetsRequestCollection = client.db("ANT").collection("all-Assets-Request")
 
 
         // MIDDLEWARE HARE
@@ -84,17 +85,17 @@ async function run() {
             const email = req.params.email;
             const query = { hrEmail: email }
             const result = await allAssetsCollection.find(query).toArray();
-            if(stock.stock== ""){
+            if (stock.stock == "") {
                 res.send(result);
                 return;
             }
             else if (stock.stock == "Out of Stock") {
-                const outOfStock = result.filter(data=> data.productQuantity == 0);
+                const outOfStock = result.filter(data => data.productQuantity == 0);
                 res.send(outOfStock);
                 return;
             }
             else if (stock.stock == "In Stock") {
-                const inStock = result.filter(data=> data.productQuantity > 0);
+                const inStock = result.filter(data => data.productQuantity > 0);
                 res.send(inStock);
                 return;
             }
@@ -110,8 +111,9 @@ async function run() {
         })
 
         // GET SINGLE ASSET BY ID
-        app.get("/single-asset/:id", verifyUser, verifyAdmin, async (req, res) => {
+        app.get("/single-asset/:id", verifyUser,  async (req, res) => {
             const id = req.params.id;
+            if(id == "") return;
             const result = await allAssetsCollection.findOne({ _id: new ObjectId(id) });
             res.send(result);
 
@@ -149,6 +151,22 @@ async function run() {
         })
 
 
+        // SAVE REQUEST DATA IN DATABASE
+        app.post("/save-request-data",verifyUser,async(req,res)=>{
+            const requestInfo = req.body;
+            const result = await allAssetsRequestCollection.insertOne(requestInfo);
+            res.send(result);
+        })
+
+
+        // GET ALL EMPLOYEE BY CURRENT HR EMAIL
+        app.get("/current-hr-employee/:email", verifyUser, verifyAdmin, async (req, res) => {
+            const hrEmail = req.params.email;
+            const query = {hrEmail:hrEmail};
+            const result = await allEmployeeCollection.find(query).toArray();
+            res.send(result)
+        })
+
 
         //-----------------USER RELATED---------------------
 
@@ -182,7 +200,6 @@ async function run() {
         // GET EMPLOYEE REQUEST
         app.get("/employee-request/:email", verifyUser, verifyAdmin, async (req, res) => {
             const email = req.params.email;
-            const query = { hrEmail: email };
             const result = await allEmployeeCollection.aggregate([
                 {
                     $match: {
