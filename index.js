@@ -171,9 +171,9 @@ async function run() {
             const hrEmail = req.params.email;
             const result = await allEmployeeCollection.aggregate([
                 {
-                    $match:{   
-                    hrEmail:hrEmail,
-                    status:"Accepted"
+                    $match: {
+                        hrEmail: hrEmail,
+                        status: "Accepted"
                     }
                 }
             ]).toArray();
@@ -194,6 +194,15 @@ async function run() {
             res.send(result);
         })
 
+        // loaded my team
+        app.get("/loaded-my-team/:email", verifyUser, async (req, res) => {
+            const query = {employeeEmail : req.params.email};
+            const result = await allEmployeeCollection.findOne(query);
+            const findQuery = {hrEmail : result.hrEmail};
+            const allEmployee = await allEmployeeCollection.find(findQuery).toArray();
+            
+            res.send(allEmployee)
+        })
 
         // UPDATE CURRENT STATUS BY HR ROUTE USING ID
         app.patch("/update-request-status/:id", verifyUser, verifyAdmin, async (req, res) => {
@@ -203,12 +212,12 @@ async function run() {
             const updatedDoc = {
 
                 $set: {
-                    status : status.status,
+                    status: status.status,
                     acceptedDate: status.acceptedDate
                 }
             }
-            const options = {upsert:true}
-            const result = await allAssetsRequestCollection.updateOne(query,updatedDoc,options);
+            const options = { upsert: true }
+            const result = await allAssetsRequestCollection.updateOne(query, updatedDoc, options);
             res.send(result);
         })
 
