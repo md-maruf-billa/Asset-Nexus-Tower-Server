@@ -169,11 +169,10 @@ async function run() {
         // GET ALL EMPLOYEE BY CURRENT HR EMAIL
         app.get("/current-hr-employee/:email", verifyUser, verifyAdmin, async (req, res) => {
             const hrEmail = req.params.email;
-            const query = { hrEmail: hrEmail };
-            // const result = await allEmployeeCollection.find(query).toArray();
             const result = await allEmployeeCollection.aggregate([
                 {
                     $match:{   
+                    hrEmail:hrEmail,
                     status:"Accepted"
                     }
                 }
