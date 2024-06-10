@@ -111,9 +111,9 @@ async function run() {
         })
 
         // GET SINGLE ASSET BY ID
-        app.get("/single-asset/:id", verifyUser,  async (req, res) => {
+        app.get("/single-asset/:id", verifyUser, async (req, res) => {
             const id = req.params.id;
-            if(id == "") return;
+            if (id == "") return;
             const result = await allAssetsCollection.findOne({ _id: new ObjectId(id) });
             res.send(result);
 
@@ -152,15 +152,15 @@ async function run() {
 
 
         // SAVE REQUEST DATA IN DATABASE
-        app.post("/save-request-data",verifyUser,async(req,res)=>{
+        app.post("/save-request-data", verifyUser, async (req, res) => {
             const requestInfo = req.body;
             const result = await allAssetsRequestCollection.insertOne(requestInfo);
             res.send(result);
         })
 
         // GET EMPLOYEE ASSET REQUEST DATA
-        app.get("/employee-asset-request/:email",verifyUser,async(req,res)=>{
-            const query = {employeeEmail : req.params.email};
+        app.get("/employee-asset-request/:email", verifyUser, async (req, res) => {
+            const query = { employeeEmail: req.params.email };
             const result = await allAssetsRequestCollection.find(query).toArray();
             res.send(result)
         })
@@ -169,15 +169,48 @@ async function run() {
         // GET ALL EMPLOYEE BY CURRENT HR EMAIL
         app.get("/current-hr-employee/:email", verifyUser, verifyAdmin, async (req, res) => {
             const hrEmail = req.params.email;
-            const query = {hrEmail:hrEmail};
-            const result = await allEmployeeCollection.find(query).toArray();
+            const query = { hrEmail: hrEmail };
+            // const result = await allEmployeeCollection.find(query).toArray();
+            const result = await allEmployeeCollection.aggregate([
+                {
+                    $match:{   
+                    status:"Accepted"
+                    }
+                }
+            ]).toArray();
             res.send(result)
         })
         // DELETE A EMPLOYEE BY HR MANAGER
-        app.delete("/current-hr-employee/:email",verifyUser,verifyAdmin,async(req,res)=>{
-            const query = {employeeEmail : req.params.email};
+        app.delete("/current-hr-employee/:email", verifyUser, verifyAdmin, async (req, res) => {
+            const query = { employeeEmail: req.params.email };
             const result = await allEmployeeCollection.deleteOne(query);
             res.send(result)
+        })
+
+
+        // GET WHICH REQUEST WHICH HR CURRENTLY LOGIN
+        app.get("/load-all-requested/:email", verifyUser, verifyAdmin, async (req, res) => {
+            const query = { hrEmail: req.params.email };
+            const result = await allAssetsRequestCollection.find(query).toArray();
+            res.send(result);
+        })
+
+
+        // UPDATE CURRENT STATUS BY HR ROUTE USING ID
+        app.patch("/update-request-status/:id", verifyUser, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const status = req.body;
+            const updatedDoc = {
+
+                $set: {
+                    status : status.status,
+                    acceptedDate: status.acceptedDate
+                }
+            }
+            const options = {upsert:true}
+            const result = await allAssetsRequestCollection.updateOne(query,updatedDoc,options);
+            res.send(result);
         })
 
         //-----------------USER RELATED---------------------
