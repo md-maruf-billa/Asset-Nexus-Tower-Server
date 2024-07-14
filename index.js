@@ -79,28 +79,48 @@ async function run() {
 
         })
 
-        // GET ALL ASSETS
-        app.get("/all-asset/:email", verifyUser, async (req, res) => {
-            const stock = req.query;
-            const email = req.params.email;
-            const query = { hrEmail: email }
+        app.get("/all-asset-length/:email", verifyUser, async (req, res) => {
+            const queryData = req.params.email;
+            const query = { hrEmail: queryData };
             const result = await allAssetsCollection.find(query).toArray();
-            if (stock.stock == "") {
-                res.send(result);
-                return;
-            }
-            else if (stock.stock == "Out of Stock") {
-                const outOfStock = result.filter(data => data.productQuantity == 0);
-                res.send(outOfStock);
-                return;
-            }
-            else if (stock.stock == "In Stock") {
-                const inStock = result.filter(data => data.productQuantity > 0);
-                res.send(inStock);
-                return;
-            }
-            res.send(result);
+            res.send(result)
         })
+
+        app.get("/all-asset/:email", verifyUser, async (req, res) => {
+            const queryData = req.query;
+            const email = req.params.email;
+            const query = { hrEmail: email };
+            const page = parseInt(queryData.page);
+            const size = parseInt(queryData.size);
+            
+
+            try {
+                let result = await allAssetsCollection.find(query)
+                    .skip(page * size)
+                    .limit(size)
+                    .toArray();
+
+                if (queryData.stock === "Out of Stock") {
+                    result = result.filter(data => data.productQuantity === 0);
+                } else if (queryData.stock === "In Stock") {
+                    result = result.filter(data => data.productQuantity > 0);
+                }
+
+                if (queryData.sort === "Low to High") {
+                    result.sort((a, b) => parseInt(a.productQuantity) - parseInt(b.productQuantity));
+                } else if (queryData.sort === "High to Low") {
+                    result.sort((a, b) => parseInt(b.productQuantity) - parseInt(a.productQuantity));
+                }
+
+
+                res.send(result);
+
+            } catch (error) {
+                console.error("Error fetching assets:", error);
+                res.status(500).send("Internal Server Error");
+            }
+        });
+
 
         // DELETE A ASSET
         app.delete("/delete-asset/:id", verifyUser, verifyAdmin, async (req, res) => {
@@ -188,22 +208,76 @@ async function run() {
 
 
         // GET WHICH REQUEST WHICH HR CURRENTLY LOGIN
-        app.get("/load-all-requested/:email", verifyUser, verifyAdmin, async (req, res) => {
+        app.get("/load-all-requested-length/:email", verifyUser, verifyAdmin, async (req, res) => {
             const query = { hrEmail: req.params.email };
             const result = await allAssetsRequestCollection.find(query).toArray();
+            res.send(result);
+        })
+        // GET WHICH REQUEST WHICH HR CURRENTLY LOGIN
+        app.get("/load-all-requested/:email", verifyUser, verifyAdmin, async (req, res) => {
+            const query = { hrEmail: req.params.email };
+            const prevPage = parseInt(req.query.page);
+            const dataSize = parseInt(req.query.size);
+            const result = await allAssetsRequestCollection.find(query)
+            .skip(prevPage*dataSize)
+            .limit(dataSize)
+            .toArray();
+            res.send(result);
+        })
+
+        // DELETE USER REQUEST------
+        app.delete("/delete-asset-request",verifyUser ,async(req,res)=>{
+            const id = req.query.id;
+            const email = req.query.email;
+
+            const query = {
+                _id: new ObjectId(id),
+                employeeEmail : email
+            }
+            const result = await allAssetsRequestCollection.deleteOne(query);
             res.send(result);
         })
 
         // loaded my team
         app.get("/loaded-my-team/:email", verifyUser, async (req, res) => {
-            const query = {employeeEmail : req.params.email};
+            const query = { employeeEmail: req.params.email };
             const result = await allEmployeeCollection.findOne(query);
-            const findQuery = {hrEmail : result.hrEmail};
+            const findQuery = { hrEmail: result.hrEmail };
             const allEmployee = await allEmployeeCollection.find(findQuery).toArray();
-            
+
             res.send(allEmployee)
         })
 
+        // my details
+        app.get('/my-details/:email', verifyUser, async (req, res) => {
+            const query = { employeeEmail: req.params.email };
+            const result = await allEmployeeCollection.findOne(query);
+            res.send(result)
+        })
+
+        // search hare---
+        app.get("/search-data/:search", verifyUser, async (req, res) => {
+            const searchValue = req.params.search;
+            const email = req.query;
+            if (searchValue === "") {
+                return;
+            }
+            else {
+                const result = await allAssetsCollection.aggregate([
+                    {
+                        $match: {
+                            hrEmail: email.email,
+                            $or: [
+                                { productName: { $regex: searchValue, $options: "i" } },
+                                { productType: { $regex: searchValue, $options: "i" } }
+                            ]
+                        }
+                    }
+                ]).toArray();
+
+                res.send(result);
+            }
+        })
         // UPDATE CURRENT STATUS BY HR ROUTE USING ID
         app.patch("/update-request-status/:id", verifyUser, verifyAdmin, async (req, res) => {
             const id = req.params.id;
